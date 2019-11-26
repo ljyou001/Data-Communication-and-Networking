@@ -1,0 +1,5 @@
+1569753108641||213212312323
+1569753110014||qw4d6q4w65e46
+1569753144366||mkdir
+1569753156759||ffmpeg -i http://112.17.40.140/PLTV/88888888/224/3221226758/index.m3u8 -vcodec copy -acodec copy e:\ffmpeg\cctv\20190928-cctv4k-3.ts
+1569753165782||ffmpeg -user_agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36" -i "https://churro-cdn.prod.reuters.tv/rest/v2/live/playlist/story/339125/chunk/chunklist_b4628000.m3u8" -vcodec copy -acodec copy E:\ffmpeg\Reuters\20190925-reuters-5.ts
