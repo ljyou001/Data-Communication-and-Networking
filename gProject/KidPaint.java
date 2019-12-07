@@ -1,8 +1,28 @@
+import java.io.IOException;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
-public class KidPaint {
-	public static void main(String[] args) {
-		UI ui = UI.getInstance();			// get the instance of UI
-		ui.setData(new int[50][50], 20);	// set the data array and block size. comment this statement to use the default data array and block size.
-		ui.setVisible(true);				// set the ui
+public class KidPaint extends JFrame{
+	private String username;
+	
+	public KidPaint() throws IOException{
+		username = JOptionPane.showInputDialog("Your username");
+		System.out.println("[KidPaint Main] Username: " + username);
+		Studio studio = new Studio(username);
+	}
+	
+	public static void main(String[] args) throws IOException {
+		/**try {
+			new KidPaint();
+		} catch (IOException e) {
+			System.err.println("System error: " + e.getMessage());
+		}*/
+		KidPaint kidP = new KidPaint();
 	}
 }
