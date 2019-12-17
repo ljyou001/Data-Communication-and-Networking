@@ -207,11 +207,18 @@ public class UI extends JFrame {
 						DataInputStream in = new DataInputStream(new FileInputStream(fileToImport));
 						width = in.readInt();
 						height = in.readInt();
+						out.writeInt(2);
+						out.writeInt(width);
+						out.writeInt(height);
+						System.out.print("[UI][Import] Upload: ");
 						for (int i = 0; i < data.length; i++) {
 							for (int j = 0; j < data[i].length; j++) {
 								data[i][j] = in.readInt();
+								out.writeInt(data[i][j]);
+								System.out.print("(" + data[i][j] + "," + i + "," + j + "), ");
 							}
 						}
+						System.out.println();
 						paintPanel.repaint();
 					} catch (IOException e2) {
 						// TODO Auto-generated catch block
@@ -400,7 +407,8 @@ public class UI extends JFrame {
 						paintData[i][j] = in.readInt();
 					}
 				}
-				setData(paintData, blockSize);
+				this.data = paintData;
+				paintPanel.repaint();
 				System.out.println("[UI] Paint Board Data Downloaded from server");
 				
 			} else if(funcType == 3) {

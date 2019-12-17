@@ -11,11 +11,11 @@ public class KidPaintServer {
 	ArrayList<Integer> ports = new ArrayList<Integer>();
 	String studioName = "no name";
 	int port = 8801;
-	int width = 50;
-	int height = 50;
-	int[][] data = new int[width][height];			// pixel color data array
+	int[][] data;			// pixel color data array
 	ServerSocket srvSocket;
 	ArrayList<Socket> list = new ArrayList<Socket>();
+	int width = 50;
+	int height = 50;
 	
 	public KidPaintServer() throws IOException {
 		
@@ -103,14 +103,18 @@ public class KidPaintServer {
 				 * Request: 2
 				 * Response: 2, width, height, data in the data[][]
 				 */
-				out.writeInt(2);
-				out.writeInt(width);
-				out.writeInt(height);
-				for (int i = 0; i < data.length; i++) {
-					for (int j = 0; j < data[i].length; j++) {
-						out.write(data[i][j]);
+				width = in.readInt();
+				height = in.readInt();
+				data = new int[width][height];
+				System.out.print("[KidPaintServer][2] Received data: ");
+				for (int j = 0; j < data.length; j++) {
+					for (int k = 0; k < data[j].length; k++) {
+						data[j][k] = in.readInt();
+						System.out.print("(" + data[j][k] + "," + j + "," + k + "), ");
 					}
 				}
+				System.out.println();
+				forwardFullData(cIP, cPort);
 				System.out.println("[KidPaintServer][2] paint data sent");
 				
 			}else if(funcType == 3) {
@@ -148,6 +152,29 @@ public class KidPaintServer {
 				forwardBucket(selectedColor, col, row, cIP, cPort);
 				System.out.println("[KidPaintServer][5] (" + col + "," + row + ") " + selectedColor);
 				
+			}
+		}
+	}
+	
+	private void forwardFullData(InetAddress cIP, int cPort) {
+		synchronized (list) {
+			for (int i = 0; i < list.size(); i++) {
+				try {
+					Socket socket = list.get(i);
+					if (socket.getInetAddress() != cIP || socket.getPort() != cPort) {
+						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+						out.writeInt(2);
+						out.writeInt(width);
+						out.writeInt(height);
+						for (int j = 0; j < data.length; j++) {
+							for (int k = 0; k < data[j].length; k++) {
+								out.writeInt(data[j][k]);
+							}
+						}
+					}
+				} catch (IOException e) {
+					// the connection is dropped but the socket is not yet removed.
+				}
 			}
 		}
 	}
