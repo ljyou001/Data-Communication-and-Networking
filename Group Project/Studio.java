@@ -68,8 +68,8 @@ public class Studio extends JFrame{
 	}
 	
 	void callUI() throws IOException {
-		UI ui = UI.getInstance();
-		ui.setData(new int[50][50], 20, studiosIP, username);
+		UI ui = UI.getInstance(studiosIP, username);
+		ui.setData(new int[50][50], 20);
 		ui.setVisible(true);
 	}
 }

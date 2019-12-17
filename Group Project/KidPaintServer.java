@@ -111,6 +111,7 @@ public class KidPaintServer {
 						out.write(data[i][j]);
 					}
 				}
+				System.out.println("[KidPaintServer][2] paint data sent");
 				
 			}else if(funcType == 3) {
 				
@@ -120,6 +121,7 @@ public class KidPaintServer {
 				 */
 				int len = in.readInt();
 				in.read(buffer, 0, len);
+				System.out.print("[KidPaintServer][3] (" + len + ") content: ");
 				forwardMsg(buffer, len, cIP, cPort);
 				
 			}else if(funcType == 4) {
@@ -132,6 +134,7 @@ public class KidPaintServer {
 				int col = in.readInt();
 				int row = in.readInt();
 				forwardPen(selectedColor, col, row, cIP, cPort);
+				System.out.println("[KidPaintServer][4] (" + col + "," + row + ") " + selectedColor);
 				
 			}else if(funcType == 5) {
 				
@@ -143,6 +146,7 @@ public class KidPaintServer {
 				int col = in.readInt();
 				int row = in.readInt();
 				forwardBucket(selectedColor, col, row, cIP, cPort);
+				System.out.println("[KidPaintServer][5] (" + col + "," + row + ") " + selectedColor);
 				
 			}
 		}
@@ -158,12 +162,14 @@ public class KidPaintServer {
 						out.writeInt(3);
 						out.writeInt(len);
 						out.write(data, 0, len);
+						System.out.print(new String(data, 0, len));
 					}
 				} catch (IOException e) {
 					// the connection is dropped but the socket is not yet removed.
 				}
 			}
 		}
+		System.out.println();
 	}
 	
 	private void forwardPen(int selectedColor, int col, int row,InetAddress cIP, int cPort) {

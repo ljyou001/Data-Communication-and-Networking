@@ -64,9 +64,9 @@ public class UI extends JFrame {
 	String studioname;
 	
 	//Network initial related part start
-	Socket socket = new Socket(sIP, sPort);
-	DataInputStream in = new DataInputStream(socket.getInputStream());
-	DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+	Socket socket;
+	DataInputStream in;
+	DataOutputStream out;
 	//Network initial related part end
 	
 	/**
@@ -74,10 +74,15 @@ public class UI extends JFrame {
 	 * @return
 	 * @throws IOException 
 	 */
-	public static UI getInstance() throws IOException {
+	
+	public static UI getInstance(InetAddress sIP, String username) throws IOException {
 		if (instance == null)
-			instance = new UI();
+			instance = new UI(sIP, username);
 		
+		return instance;
+	}
+	
+	public static UI getInstance() throws IOException {
 		return instance;
 	}
 	
@@ -87,7 +92,7 @@ public class UI extends JFrame {
 	 */
 	
 	
-	private UI() throws IOException {
+	private UI(InetAddress sIP, String username) throws IOException {
 		setTitle("KidPaint");
 		
 		JPanel basePanel = new JPanel();
@@ -95,17 +100,19 @@ public class UI extends JFrame {
 		basePanel.setLayout(new BorderLayout(0, 0));
 		
 		//Network initial related part start
+		socket = new Socket(sIP, sPort);
+		in = new DataInputStream(socket.getInputStream());
+		out = new DataOutputStream(socket.getOutputStream());
+		
 		Thread t = new Thread(() -> {
 			try {
-				client(socket, in, out);
+				client();
 			} catch (IOException ex) {
 				System.err.println("[UI] Connection dropped!");
 				System.exit(-1);
 			}
 		});
 		t.start();
-		
-		out.writeInt(2);
 		//Network initial related part end
 		
 		paintPanel = new JPanel() {
@@ -358,7 +365,7 @@ public class UI extends JFrame {
 	}
 	
 	//For the networking function start	
-	private void client(Socket socket, DataInputStream in, DataOutputStream out) throws IOException {
+	private void client() throws IOException {
 		byte[] buffer = new byte[1024];
 		System.out.printf("[UI] Established a connection to server %s:%d\n\n", socket.getInetAddress(), socket.getPort());
 		
@@ -393,7 +400,7 @@ public class UI extends JFrame {
 						paintData[i][j] = in.readInt();
 					}
 				}
-				setData(paintData, blockSize, sIP, username);
+				setData(paintData, blockSize);
 				System.out.println("[UI] Paint Board Data Downloaded from server");
 				
 			} else if(funcType == 3) {
@@ -404,8 +411,9 @@ public class UI extends JFrame {
 				 */
 				int len = in.readInt();
 				in.read(buffer, 0, len);
-				String msg =  String(buffer, 0, len);
+				String msg = new String(buffer, 0, len);
 				onServerTextInputted(msg);
+				System.out.println("[UI] Message received from server (" + len + ")");
 				
 			} else if(funcType == 4) {
 				
@@ -413,10 +421,11 @@ public class UI extends JFrame {
 				 * Request: 4, selectedColor, col, row
 				 * Response: forwardPen() - 4, selectedColor, col, row
 				 */
-				int serverColor = in.readInt();
+				selectedColor = in.readInt();
 				int co = in.readInt();
 				int ro = in.readInt();
 				server_paintPixel(co, ro);
+				System.out.println("[UI] Pen received");
 				
 			} else if(funcType == 5) {
 				
@@ -424,10 +433,11 @@ public class UI extends JFrame {
 				 * Request: 5, selectedColor, col, row
 				 * Response: forwardBucket() - 5, selectedColor, col, row
 				 */
-				int serverColor = in.readInt();
+				selectedColor = in.readInt();
 				int co = in.readInt();
 				int ro = in.readInt();
 				server_paintArea(co, ro);
+				System.out.println("[UI] Bucket received");
 				
 			}
 		}
@@ -592,7 +602,7 @@ public class UI extends JFrame {
 	 * @param data
 	 * @param blockSize
 	 */
-	public void setData(int[][] data, int blockSize, InetAddress sIP, String username) {
+	public void setData(int[][] data, int blockSize) {
 		this.data = data;
 		this.blockSize = blockSize;
 		paintPanel.setPreferredSize(new Dimension(data.length * blockSize, data[0].length * blockSize));
