@@ -63,6 +63,12 @@ public class UI extends JFrame {
 	String username;								//Data need to be passed
 	String studioname;
 	
+	//Network initial related part start
+	Socket socket = new Socket(sIP, sPort);
+	DataInputStream in = new DataInputStream(socket.getInputStream());
+	DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+	//Network initial related part end
+	
 	/**
 	 * get the instance of UI. Singleton design pattern.
 	 * @return
@@ -89,10 +95,6 @@ public class UI extends JFrame {
 		basePanel.setLayout(new BorderLayout(0, 0));
 		
 		//Network initial related part start
-		Socket socket = new Socket(sIP, sPort);
-		DataInputStream in = new DataInputStream(socket.getInputStream());
-		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-		
 		Thread t = new Thread(() -> {
 			try {
 				client(socket, in, out);
@@ -351,6 +353,8 @@ public class UI extends JFrame {
 		
 		this.setSize(new Dimension(800, 600));
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		
+		
 	}
 	
 	//For the networking function start	
@@ -389,7 +393,7 @@ public class UI extends JFrame {
 						paintData[i][j] = in.readInt();
 					}
 				}
-				setData(paintData, blockSize);
+				setData(paintData, blockSize, sIP, username);
 				System.out.println("[UI] Paint Board Data Downloaded from server");
 				
 			} else if(funcType == 3) {
@@ -464,8 +468,6 @@ public class UI extends JFrame {
 		chatArea.setText(chatArea.getText() + text + "\n");
 		
 		//Networking part start
-		Socket socket = new Socket(sIP, sPort);
-		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		out.writeInt(3);
 		out.writeInt(text.length());
 		out.write(text.getBytes(), 0, text.length());
@@ -496,8 +498,6 @@ public class UI extends JFrame {
 		paintPanel.repaint(col * blockSize, row * blockSize, blockSize, blockSize);
 		
 		//Networking part start
-		Socket socket = new Socket(sIP, sPort);
-		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		out.writeInt(4);
 		out.writeInt(selectedColor);
 		out.writeInt(col);
@@ -578,8 +578,6 @@ public class UI extends JFrame {
 		}
 		
 		//Networking part start
-		Socket socket = new Socket(sIP, sPort);
-		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 		out.writeInt(5);
 		out.writeInt(selectedColor);
 		out.writeInt(col);
@@ -594,7 +592,7 @@ public class UI extends JFrame {
 	 * @param data
 	 * @param blockSize
 	 */
-	public void setData(int[][] data, int blockSize) {
+	public void setData(int[][] data, int blockSize, InetAddress sIP, String username) {
 		this.data = data;
 		this.blockSize = blockSize;
 		paintPanel.setPreferredSize(new Dimension(data.length * blockSize, data[0].length * blockSize));

@@ -10,15 +10,19 @@ import javax.swing.JFrame;
 
 public class Studio extends JFrame{
 	private String username;
-	ArrayList<InetAddress> studiosIP = new ArrayList<InetAddress>();
+	InetAddress studiosIP;
 	int sPort = 8801;
-	ArrayList<String> studioName = new ArrayList<String>();
+	String studioName;
 	String studioname;
 	
 	public Studio(String username) throws IOException {
 		this.username = username;
 		networkdiscovery();
-		if (studiosIP.size() > 0 && studioName.size() > 0 && studiosIP.size() == studioName.size()) {
+		String serverName = getName(studiosIP);
+		System.out.println("[Studio] find a server with [IP address| studio name]: [" 
+							+ studiosIP + "|" + serverName + "]");
+		studioName = serverName;
+		if (studiosIP != null && studioName != null) {
 			callUI();
 		}
 	}
@@ -28,22 +32,20 @@ public class Studio extends JFrame{
 		String reply = "This is Server of KidPaint";
 		
 		DatagramSocket socket = new DatagramSocket(5555);
-		DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), 0);
+		DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), 5555);
 		
 		DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
+		System.out.println("[Studio] UDP Server is on for server discovery...");
 		while(true) {
-			System.out.println("[Studio] UDP Server is on for server discovery...");
 			socket.send(packet);
 			
 			socket.receive(receivedPacket);
 			String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
 			
 			if (content.equals(reply)) {
-				studiosIP.add(receivedPacket.getAddress());
-				String serverName = getName(receivedPacket.getAddress());
-				System.out.println("[Studio] find a server with [IP address| studio name]: [" 
-									+ receivedPacket.getAddress() + "|" + serverName + "]");
-				studioName.add(serverName);
+				studiosIP = receivedPacket.getAddress();
+				System.out.println("[Studio] Server found");
+				break;
 			}
 		}
 	}
@@ -67,9 +69,7 @@ public class Studio extends JFrame{
 	
 	void callUI() throws IOException {
 		UI ui = UI.getInstance();
-		ui.setData(new int[50][50], 20);
-		ui.username = username;
-		ui.sIP = studiosIP.get(0);
+		ui.setData(new int[50][50], 20, studiosIP, username);
 		ui.setVisible(true);
 	}
 }

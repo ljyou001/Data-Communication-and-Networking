@@ -53,15 +53,15 @@ public class KidPaintServer {
 	}
 	
 	public void udpserver() throws IOException {
-		String msg = "[KidPaintServer] KidPaint is Launched";
-		String reply = "[KidPaintServer] This is Server of KidPaint";
+		String msg = "KidPaint is Launched";
+		String reply = "This is Server of KidPaint";
 		
-		DatagramSocket socket = new DatagramSocket(0);
-		DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), 0);
+		DatagramSocket socket = new DatagramSocket(5555);
+		DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), 5555);
 		
 		DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
+		System.out.println("[KidPaintServer] UDP server has launched for searching clients...");
 		while(true) {
-			System.out.println("[KidPaintServer] UDP server has launched for searching clients...");
 			
 			socket.receive(receivedPacket);
 			String content = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
