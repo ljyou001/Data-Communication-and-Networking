@@ -31,7 +31,7 @@ public class Studio extends JFrame{
 		String msg = "KidPaint is Launched";
 		String reply = "This is Server of KidPaint";
 		
-		DatagramSocket socket = new DatagramSocket(5555);
+		DatagramSocket socket = new DatagramSocket(5556);
 		DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), 5555);
 		
 		DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
