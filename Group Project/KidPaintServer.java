@@ -57,7 +57,7 @@ public class KidPaintServer {
 		String reply = "This is Server of KidPaint";
 		
 		DatagramSocket socket = new DatagramSocket(5555);
-		DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), 5555);
+		DatagramPacket packet = new DatagramPacket(msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), 5556);
 		
 		DatagramPacket receivedPacket = new DatagramPacket(new byte[1024], 1024);
 		System.out.println("[KidPaintServer] UDP server has launched for searching clients...");
