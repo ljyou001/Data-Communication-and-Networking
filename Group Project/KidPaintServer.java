@@ -1,3 +1,4 @@
+import java.awt.Point;
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -5,20 +6,102 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 public class KidPaintServer {
 	ArrayList<String> clientAddresses = new ArrayList<String>();
 	ArrayList<Integer> ports = new ArrayList<Integer>();
-	String studioName = "no name";
+	String studioName;
 	int port = 8801;
 	int[][] data;			// pixel color data array
 	ServerSocket srvSocket;
 	ArrayList<Socket> list = new ArrayList<Socket>();
-	int width = 50;
-	int height = 50;
+	int width;
+	int height;
 	
 	public KidPaintServer() throws IOException {
+		this.studioName = "no name";
+		this.width = 50;
+		this.height = 50;
 		
+		new Thread(()->{
+			try {
+				udpserver();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}).start();
+		
+		srvSocket = new ServerSocket(port);
+
+		while (true) {
+			System.out.printf("[KidPaintServer] Listening at port %d...\n", port);
+			Socket cSocket = srvSocket.accept();
+
+			synchronized (list) {
+				list.add(cSocket);
+				System.out.printf("[KidPaintServer] Total %d clients are connected.\n", list.size());
+			}
+
+			Thread t = new Thread(() -> {
+				try {
+					serveTCP(cSocket);
+				} catch (IOException e) {
+					System.err.println("[KidPaintServer] connection dropped.");
+				}
+				synchronized (list) {
+					list.remove(cSocket);
+				}
+			});
+			t.start();
+		}
+	}
+	
+	public KidPaintServer(String studioName) throws IOException {
+		this.studioName = studioName;
+		this.width = 50;
+		this.height = 50;
+	
+		new Thread(()->{
+			try {
+				udpserver();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}).start();
+		
+		srvSocket = new ServerSocket(port);
+
+		while (true) {
+			System.out.printf("[KidPaintServer] Listening at port %d...\n", port);
+			Socket cSocket = srvSocket.accept();
+
+			synchronized (list) {
+				list.add(cSocket);
+				System.out.printf("[KidPaintServer] Total %d clients are connected.\n", list.size());
+			}
+
+			Thread t = new Thread(() -> {
+				try {
+					serveTCP(cSocket);
+				} catch (IOException e) {
+					System.err.println("[KidPaintServer] connection dropped.");
+				}
+				synchronized (list) {
+					list.remove(cSocket);
+				}
+			});
+			t.start();
+		}
+	}
+	
+	public KidPaintServer(String studioName, int width, int height) throws IOException {
+		this.studioName = studioName;
+		this.width = width;
+		this.height = height;
+		this.data = new int[width][height];
+	
 		new Thread(()->{
 			try {
 				udpserver();
@@ -99,17 +182,17 @@ public class KidPaintServer {
 				
 			}else if(funcType == 2) {
 				
-				/*funcType 2 means Download data from server
+				/*funcType 2 means Download data from server(triggered by import)
 				 * Request: 2
 				 * Response: 2, width, height, data in the data[][]
 				 */
 				width = in.readInt();
 				height = in.readInt();
-				data = new int[width][height];
+				resetDataSize(width, height);
 				System.out.print("[KidPaintServer][2] Received data: ");
 				for (int j = 0; j < data.length; j++) {
 					for (int k = 0; k < data[j].length; k++) {
-						data[j][k] = in.readInt();
+						this.data[j][k] = in.readInt();
 						System.out.print("(" + data[j][k] + "," + j + "," + k + "), ");
 					}
 				}
@@ -138,6 +221,7 @@ public class KidPaintServer {
 				int col = in.readInt();
 				int row = in.readInt();
 				forwardPen(selectedColor, col, row, cIP, cPort);
+				server_paintPixel(col, row, selectedColor);
 				System.out.println("[KidPaintServer][4] (" + col + "," + row + ") " + selectedColor);
 				
 			}else if(funcType == 5) {
@@ -150,8 +234,62 @@ public class KidPaintServer {
 				int col = in.readInt();
 				int row = in.readInt();
 				forwardBucket(selectedColor, col, row, cIP, cPort);
+				server_paintArea(col, row, selectedColor);
 				System.out.println("[KidPaintServer][5] (" + col + "," + row + ") " + selectedColor);
 				
+			}else if(funcType == 6) {
+				
+				/*funcType 6 means get width
+				 * Request: 6 
+				 * Response: 6, width
+				 */
+				out.writeInt(6);
+				out.writeInt(width);
+				System.out.println("[KidPaintServer][6] " + width);
+				
+			}else if(funcType == 7) {
+				
+				/*funcType 7 means get height
+				 * Request: 7 
+				 * Response: 7, height
+				 */
+				out.writeInt(7);
+				out.writeInt(height);
+				System.out.println("[KidPaintServer][7] " + height);
+				
+			}else if(funcType == 8) {
+				
+				/*funcType 8 means Download data from server(triggered by UI start)
+				 * Request: 8
+				 * Response: 2, width, height, data in the data[][]
+				 */
+				forwardOriData(cIP, cPort);
+				System.out.println("[KidPaintServer][8] paint data sent");
+			}
+			
+		}
+	}
+		
+	private void forwardOriData(InetAddress cIP, int cPort) {
+		synchronized (list) {
+			for (int i = 0; i < list.size(); i++) {
+				try {
+					Socket socket = list.get(i);
+					if (socket.getInetAddress() == cIP && socket.getPort() == cPort
+							&& list.size() > 1) {
+						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+						out.writeInt(2);
+						out.writeInt(data.length);
+						out.writeInt(data[0].length);
+						for (int j = 0; j < data.length; j++) {
+							for (int k = 0; k < data[j].length; k++) {
+								out.writeInt(data[j][k]);
+							}
+						}
+					}
+				} catch (IOException e) {
+					// the connection is dropped but the socket is not yet removed.
+				}
 			}
 		}
 	}
@@ -237,6 +375,52 @@ public class KidPaintServer {
 		}
 	}
 	
+	/**
+	 * Networking Related: follow the instruction of server
+	 * change the color of a specific pixel
+	 * @param col, row - the position of the selected pixel
+	 */
+	public void server_paintPixel(int col, int row, int selectedColor) {
+		if (col >= data.length || row >= data[0].length) return;
+		data[col][row] = selectedColor;
+	}
+	
+	/**
+	 * Networking Related: follow the instruction of server
+	 * change the color of a specific area
+	 * @param col, row - the position of the selected pixel
+	 * @return a list of modified pixels
+	 */
+	public List server_paintArea(int col, int row, int selectedColor) {
+		LinkedList<Point> filledPixels = new LinkedList<Point>();
+
+		if (col >= data.length || row >= data[0].length) return filledPixels;
+
+		int oriColor = data[col][row];
+		LinkedList<Point> buffer = new LinkedList<Point>();
+		
+		if (oriColor != selectedColor) {
+			buffer.add(new Point(col, row));
+			
+			while(!buffer.isEmpty()) {
+				Point p = buffer.removeFirst();
+				int x = p.x;
+				int y = p.y;
+				
+				if (data[x][y] != oriColor) continue;
+				
+				data[x][y] = selectedColor;
+				filledPixels.add(p);
+	
+				if (x > 0 && data[x-1][y] == oriColor) buffer.add(new Point(x-1, y));
+				if (x < data.length - 1 && data[x+1][y] == oriColor) buffer.add(new Point(x+1, y));
+				if (y > 0 && data[x][y-1] == oriColor) buffer.add(new Point(x, y-1));
+				if (y < data[0].length - 1 && data[x][y+1] == oriColor) buffer.add(new Point(x, y+1));
+			}
+		}
+		return filledPixels;
+	}
+	
 	
 	
 	public static void main(String[] args) {
@@ -245,6 +429,12 @@ public class KidPaintServer {
 		} catch (IOException e) {
 			System.err.println("[KidPaintServer] System error: " + e.getMessage());
 		}
+	}
+	
+	private void resetDataSize(int width, int height) {
+		this.width = width;
+		this.height = height;
+		this.data = new int[width][height];
 	}
 	
 }

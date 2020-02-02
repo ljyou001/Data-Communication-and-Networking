@@ -11,13 +11,13 @@ import java.net.InetAddress;
 public class KidPaint extends JFrame{
 	private String username;
 	
-	public KidPaint() throws IOException{
+	public KidPaint() throws IOException, InterruptedException{
 		username = JOptionPane.showInputDialog("Your username");
 		System.out.println("[KidPaint Main] Username: " + username);
-		Studio studio = new Studio(username);
+		StudioList studio = new StudioList(username);
 	}
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, InterruptedException {
 		/**try {
 			new KidPaint();
 		} catch (IOException e) {

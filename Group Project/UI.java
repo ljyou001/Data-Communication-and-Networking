@@ -53,9 +53,9 @@ public class UI extends JFrame {
 	private static UI instance;
 	private int selectedColor = -543230; 	//golden
 	
-	int width = 50;
-	int height = 50;
-	int[][] data = new int[width][height];			// pixel color data array
+	int width = 0;
+	int height = 0;
+	int[][] data = new int[50][50];			// pixel color data array
 	int blockSize = 16;
 	PaintMode paintMode = PaintMode.Pixel;
 	InetAddress sIP;								//Data need to be passed
@@ -100,9 +100,9 @@ public class UI extends JFrame {
 		basePanel.setLayout(new BorderLayout(0, 0));
 		
 		//Network initial related part start
-		socket = new Socket(sIP, sPort);
-		in = new DataInputStream(socket.getInputStream());
-		out = new DataOutputStream(socket.getOutputStream());
+		this.socket = new Socket(sIP, sPort);
+		this.in = new DataInputStream(socket.getInputStream());
+		this.out = new DataOutputStream(socket.getOutputStream());
 		
 		Thread t = new Thread(() -> {
 			try {
@@ -113,6 +113,8 @@ public class UI extends JFrame {
 			}
 		});
 		t.start();
+		
+		downloadData();
 		//Network initial related part end
 		
 		paintPanel = new JPanel() {
@@ -204,22 +206,23 @@ public class UI extends JFrame {
 					System.out.println("[UI] " + fileImporter.getSelectedFile());
 					File fileToImport = fileImporter.getSelectedFile();
 					try {
-						DataInputStream in = new DataInputStream(new FileInputStream(fileToImport));
-						width = in.readInt();
-						height = in.readInt();
+						DataInputStream inp = new DataInputStream(new FileInputStream(fileToImport));
+						int wi = inp.readInt();
+						int he = inp.readInt();
 						out.writeInt(2);
-						out.writeInt(width);
-						out.writeInt(height);
+						out.writeInt(wi);
+						out.writeInt(he);
+						int[][] paintData = new int[wi][he];
 						System.out.print("[UI][Import] Upload: ");
-						for (int i = 0; i < data.length; i++) {
-							for (int j = 0; j < data[i].length; j++) {
-								data[i][j] = in.readInt();
-								out.writeInt(data[i][j]);
-								System.out.print("(" + data[i][j] + "," + i + "," + j + "), ");
+						for (int i = 0; i < wi; i++) {
+							for (int j = 0; j < he; j++) {
+								paintData[i][j] = inp.readInt();
+								out.writeInt(paintData[i][j]);
+								System.out.print("(" + paintData[i][j] + "," + i + "," + j + "), ");
 							}
 						}
 						System.out.println();
-						paintPanel.repaint();
+						setData(paintData, 20);
 					} catch (IOException e2) {
 						// TODO Auto-generated catch block
 						e2.printStackTrace();
@@ -402,12 +405,12 @@ public class UI extends JFrame {
 				width = in.readInt();
 				height = in.readInt();
 				int[][] paintData = new int[width][height];
-				for (int i = 0; i < data.length; i++) {
-					for (int j = 0; j < data[i].length; j++) {
+				for (int i = 0; i < paintData.length; i++) {
+					for (int j = 0; j < paintData[i].length; j++) {
 						paintData[i][j] = in.readInt();
 					}
 				}
-				this.data = paintData;
+				setData(paintData, 20);
 				paintPanel.repaint();
 				System.out.println("[UI] Paint Board Data Downloaded from server");
 				
@@ -447,10 +450,14 @@ public class UI extends JFrame {
 				server_paintArea(co, ro);
 				System.out.println("[UI] Bucket received");
 				
-			}
+			} 
+			
 		}
 	}
 	//For the networking function ended
+	private void downloadData() throws IOException {
+		out.writeInt(8);
+	}
 	
 	private String String(byte[] buffer, int i, int len) {
 		// TODO Auto-generated method stub
@@ -613,7 +620,7 @@ public class UI extends JFrame {
 	public void setData(int[][] data, int blockSize) {
 		this.data = data;
 		this.blockSize = blockSize;
-		paintPanel.setPreferredSize(new Dimension(data.length * blockSize, data[0].length * blockSize));
+		paintPanel.setPreferredSize(new Dimension (data.length * blockSize,  data[0].length * blockSize));
 		paintPanel.repaint();
 	}
 }
