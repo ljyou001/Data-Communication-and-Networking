@@ -1,3 +1,3 @@
-# HKBU-COMP3015-Data-Communication-and-Networking
+# Data Communication and Networking Projects and Exercises
 
 COMP3015 Data Communication and Networking Projects and Exercises
